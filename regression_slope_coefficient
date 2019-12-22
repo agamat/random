@@ -1,0 +1,84 @@
+# https://katbailey.github.io/post/from-both-sides-now-the-math-of-linear-regression/
+library(data.table)
+library(ggplot2)
+
+seed(1)
+x <- 1:50
+y <- x + 10*rnorm(50)
+
+dt <- data.table(x = x, y = y)
+
+ggplot(dt, aes(x = x, y = y)) + geom_point()
+
+# relationship between the predictor and the outcome
+
+# Slope calculated directly:
+# pearson correlation coefficient
+slope1 <- cor(x, y) * sd(y) / sd(x)
+slope2 <- cor(x, y) * sd(x) / sd(y)
+
+# slope fitting Y as the outcome and X as the predictor
+cor(x, y) * sd(y) / sd(x)
+
+# slope fitting X as the outcome, Y as the predictor
+cor(x, y) * sd(x) / sd(y)
+
+# library(gridExtra)
+# py <- ggplot(dt) +
+#   geom_point(aes(x, y), color = 'blue') +
+#   geom_smooth(aes(x, y),method = "lm", se = F) + 
+#   ggtitle(label = NULL, subtitle = 'blue : slope fitting Y as the outcome and X as the predictor')
+# 
+# px <- ggplot(dt) +
+#   geom_point(aes(y, x), color = 'red') +
+#   geom_smooth(aes(y, x),method = "lm", se = F, color = 'red') +
+#   ggtitle(label = NULL, subtitle = 'red : slope fitting x as the outcome and y as the predictor')  
+# 
+# grid.arrange(py, px, nrow = 1)
+# grid.arrange(py, px, ncol = 1)
+
+# cor ----------------------------------
+# cor(x, y) = cor(y, x), but
+# correlation coefficient = "tightness" of linear relationship between 2 variables with scale [-1 : 1]
+library("PerformanceAnalytics")
+p_corr <- chart.Correlation(dt, histogram = TRUE, pch = 19)
+chart_corr(dt)
+
+# slope ---------------------------------
+# there are 2 distinct "lines of best fit":
+# - linear regression of Y against X (x dep)
+# - linear regression of X against Y (y dep)
+# to regress Y against X: X independent var; Y dependent var: Y=aX+b
+p_slopes <- ggplot(dt) +
+  geom_point( aes(x, y), color = 'blue') +
+  geom_smooth(aes(x, y), method = "lm", se = F, color = 'blue') + 
+  geom_point( aes(y, x), color = 'red') +
+  geom_smooth(aes(y, x), method = "lm", se = F, color = 'red') +
+  ggtitle(
+    label = NULL,
+    subtitle =
+      sprintf('%s\n%s',
+              'blue : slope fitting y as the outcome and x as the predictor',
+              'red  : slope fitting x as the outcome and y as the predictor'
+      )
+  )
+
+gridExtra::grid.arrange(p_corr, p_slopes, nrow = 1)
+
+
+dt           # x predictor, y outcome
+dt[order(y)] # y predictor, x outcome
+
+# Slope taken from a model
+mod_regr_y_x <- lm(y ~ x)
+slope_y_x <- unname(mod_regr_y_x$coefficients['x'])
+slope_y_x <- unname(coef(mod_regr_y_x)['x'])
+
+#plot(mod_regr_y_x)
+
+print(slope1)
+print(slope2)
+
+# the slope coefficient in a simple regression of Y on X is
+# the correlation between Y and X multiplied by the ratio of their standard deviations:
+intercept = mean(y) - slope1 * mean(x)
